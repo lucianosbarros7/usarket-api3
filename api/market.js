@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Erro ao buscar dados." });
     }
   }
-ssssssss
+
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   return res.status(200).json(cachedData);
