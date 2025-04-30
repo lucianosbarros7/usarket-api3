@@ -1,6 +1,6 @@
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -53,4 +53,4 @@ export default async function handler(req, res) {
     console.error("Erro ao buscar dados reais:", err);
     res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
   }
-}
+};
