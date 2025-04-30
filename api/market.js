@@ -1,10 +1,11 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
+  // Trata preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -24,9 +25,18 @@ module.exports = async (req, res) => {
 
   try {
     const response = await fetch(url);
-    const json = await response.json();
-    const result = json.chart.result[0];
 
+    if (!response.ok) {
+      throw new Error(`Yahoo API error: ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    if (!json.chart || !json.chart.result || !json.chart.result[0]) {
+      throw new Error('Resposta inválida da API do Yahoo Finance');
+    }
+
+    const result = json.chart.result[0];
     const timestamps = result.timestamp;
     const values = result.indicators.quote[0].close;
 
@@ -43,4 +53,4 @@ module.exports = async (req, res) => {
     console.error("Erro ao buscar dados reais:", err);
     res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
   }
-};
+}
