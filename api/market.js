@@ -1,51 +1,39 @@
-export default function handler(req, res) {
-  // Habilita CORS
+import fetch from 'node-fetch';
+
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  const labels = [
-    "01 Abr", "02 Abr", "03 Abr", "04 Abr", "05 Abr", "06 Abr", "07 Abr", "08 Abr",
-    "09 Abr", "10 Abr", "11 Abr", "12 Abr", "13 Abr", "14 Abr", "15 Abr", "16 Abr",
-    "17 Abr", "18 Abr", "19 Abr", "20 Abr", "21 Abr", "22 Abr", "23 Abr", "24 Abr",
-    "25 Abr", "26 Abr", "27 Abr", "28 Abr", "29 Abr", "30 Abr"
-  ];
+  const { index } = req.query;
 
-  const mockData = {
-    spx: [
-      4500, 4490, 4505, 4498, 4512, 4500, 4520, 4515,
-      4530, 4525, 4545, 4530, 4550, 4540, 4560, 4555,
-      4570, 4565, 4580, 4575, 4590, 4585, 4600, 4595,
-      4610, 4605, 4620, 4615, 4630, 4625
-    ],
-    nasdaq: [
-      14800, 14750, 14830, 14760, 14890, 14820, 14940, 14870,
-      14980, 14910, 15000, 14930, 15020, 14940, 15040, 14970,
-      15060, 14990, 15080, 15010, 15100, 15030, 15120, 15050,
-      15140, 15070, 15160, 15090, 15180, 15110
-    ],
-    dow: [
-      40600, 40550, 40620, 40590, 40580, 40640, 40570, 40610,
-      40520, 40680, 40630, 40700, 40620, 40750, 40600, 40740,
-      40630, 40710, 40600, 40720, 40690, 40760, 40650, 40810,
-      40780, 40720, 40840, 40790, 40860, 40820
-    ],
-    msci: [
-      1700, 1695, 1702, 1698, 1705, 1700, 1708, 1703,
-      1710, 1705, 1712, 1708, 1715, 1710, 1718, 1713,
-      1720, 1715, 1722, 1718, 1725, 1720, 1728, 1723,
-      1730, 1725, 1732, 1728, 1735, 1730
-    ],
-    russell: [
-      1880, 1870, 1885, 1875, 1890, 1880, 1895, 1885,
-      1900, 1890, 1905, 1895, 1910, 1900, 1915, 1905,
-      1920, 1910, 1925, 1915, 1930, 1920, 1935, 1925,
-      1940, 1930, 1945, 1935, 1950, 1940
-    ]
+  const SYMBOLS = {
+    spx: "^GSPC",
+    nasdaq: "^IXIC",
+    dow: "^DJI",
+    msci: "URTH",
+    russell: "^RUT"
   };
 
-  const { index } = req.query;
-  const selected = mockData[index] || mockData['spx'];
+  const symbol = SYMBOLS[index] || SYMBOLS['spx'];
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=30d&interval=1d`;
 
-  res.status(200).json({ labels, values: selected });
+  try {
+    const response = await fetch(url);
+    const json = await response.json();
+    const result = json.chart.result[0];
+
+    const timestamps = result.timestamp;
+    const values = result.indicators.quote[0].close;
+
+    const labels = timestamps.map(ts => {
+      const date = new Date(ts * 1000);
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    });
+
+    res.status(200).json({ labels, values });
+  } catch (err) {
+    console.error("Erro ao buscar dados reais:", err);
+    res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
+  }
 }
