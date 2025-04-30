@@ -1,6 +1,6 @@
 let cachedData = null;
 let lastFetch = 0;
-const cacheDuration = 60000; // 60 segundos
+const cacheDuration = 60000; // 1 minuto
 
 export default async function handler(req, res) {
   const now = Date.now();
@@ -17,5 +17,6 @@ export default async function handler(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET");
+
   return res.status(200).json(cachedData);
 }
