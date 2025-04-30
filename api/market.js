@@ -1,22 +1,16 @@
-let cachedData = null;
-let lastFetch = 0;
-const cacheDuration = 60000; // 1 minuto
+export default function handler(req, res) {
+  const { index } = req.query;
 
-export default async function handler(req, res) {
-  const now = Date.now();
-  if (!cachedData || now - lastFetch > cacheDuration) {
-    try {
-      const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-      const values = [4500, 4600, 4550, 4700, 4650, 4750];
-      cachedData = { labels, values };
-      lastFetch = now;
-    } catch (error) {
-      return res.status(500).json({ error: "Erro ao buscar dados." });
-    }
-  }
+  const mockData = {
+    spx:   [4500, 4510, 4490, 4520, 4550],
+    nasdaq: [14800, 14820, 14750, 14900, 15000],
+    dow:   [40400, 40550, 40600, 40750, 40800],
+    msci:  [1700, 1710, 1715, 1720, 1725],
+    russell: [1880, 1885, 1890, 1900, 1910]
+  };
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET");
+  const selected = mockData[index] || mockData['spx'];
+  const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
 
-  return res.status(200).json(cachedData);
+  res.status(200).json({ labels, values: selected });
 }
