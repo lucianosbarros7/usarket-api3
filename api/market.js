@@ -1,20 +1,13 @@
-export default function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // ou use o domínio exato em produção
-  res.setHeader("Access-Control-Allow-Methods", "GET");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+const labels = [
+  "02 Abr", "03 Abr", "04 Abr", "05 Abr", "08 Abr",
+  "09 Abr", "10 Abr", "11 Abr", "12 Abr", "15 Abr",
+  "16 Abr", "17 Abr", "18 Abr", "19 Abr", "22 Abr"
+];
 
-  const { index } = req.query;
-
-  const mockData = {
-    spx: [4500, 4510, 4490, 4520, 4550],
-    nasdaq: [14800, 14820, 14750, 14900, 15000],
-    dow: [40400, 40550, 40600, 40750, 40800],
-    msci: [1700, 1710, 1715, 1720, 1725],
-    russell: [1880, 1885, 1890, 1900, 1910]
-  };
-
-  const selected = mockData[index] || mockData['spx'];
-  const labels = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex'];
-
-  res.status(200).json({ labels, values: selected });
-}
+const mockData = {
+  spx:     [4500, 4503, 4495, 4510, 4508, 4520, 4530, 4515, 4532, 4540, 4530, 4528, 4545, 4552, 4550],
+  nasdaq:  [14800, 14820, 14790, 14850, 14880, 14900, 14910, 14920, 14890, 14950, 14980, 15000, 14995, 14985, 15010],
+  dow:     [40600, 40580, 40590, 40620, 40650, 40700, 40750, 40720, 40740, 40760, 40800, 40820, 40830, 40810, 40850],
+  msci:    [1700, 1702, 1704, 1706, 1708, 1710, 1712, 1714, 1716, 1718, 1720, 1722, 1724, 1726, 1728],
+  russell: [1880, 1885, 1890, 1895, 1892, 1898, 1900, 1902, 1905, 1910, 1912, 1914, 1915, 1918, 1920]
+};
