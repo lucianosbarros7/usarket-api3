@@ -40,15 +40,22 @@ module.exports = async (req, res) => {
     const timestamps = result.timestamp;
     const values = result.indicators.quote[0].close;
 
-    const labels = timestamps.map(ts => {
-      const date = new Date(ts * 1000);
+    // ✅ Filtra valores nulos para garantir consistência
+    const filtered = values
+      .map((v, i) => ({ v, ts: timestamps[i] }))
+      .filter(item => item.v != null);
+
+    const labels = filtered.map(item => {
+      const date = new Date(item.ts * 1000);
       return date.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'short'
       });
     });
 
-    res.status(200).json({ labels, values });
+    const cleanedValues = filtered.map(item => item.v);
+
+    res.status(200).json({ labels, values: cleanedValues });
   } catch (err) {
     console.error("Erro ao buscar dados reais:", err);
     res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
