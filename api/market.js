@@ -5,7 +5,6 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Trata preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -40,10 +39,11 @@ module.exports = async (req, res) => {
     const timestamps = result.timestamp;
     const values = result.indicators.quote[0].close;
 
-    // ✅ Filtra valores nulos para garantir consistência
-    const filtered = values
-      .map((v, i) => ({ v, ts: timestamps[i] }))
-      .filter(item => item.v != null);
+    // 🔍 Filtra e alinha valores válidos com datas
+    const filtered = timestamps.map((ts, i) => {
+      const v = values[i];
+      return v != null && !isNaN(v) ? { ts, v } : null;
+    }).filter(Boolean);
 
     const labels = filtered.map(item => {
       const date = new Date(item.ts * 1000);
@@ -56,6 +56,7 @@ module.exports = async (req, res) => {
     const cleanedValues = filtered.map(item => item.v);
 
     res.status(200).json({ labels, values: cleanedValues });
+
   } catch (err) {
     console.error("Erro ao buscar dados reais:", err);
     res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
