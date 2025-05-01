@@ -1,16 +1,17 @@
 const fetch = require('node-fetch');
-const NodeCache = require('node-cache');
-const cache = new NodeCache({ stdTTL: 300 }); // cache de 5 minutos
+
+let cache = {};
+const CACHE_TTL = 1000 * 60 * 30; // 30 minutos
 
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Cache-Control", "no-store");
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { index } = req.query;
+
   const SYMBOLS = {
     spx: "^GSPC",
     nasdaq: "^IXIC",
@@ -19,25 +20,26 @@ module.exports = async (req, res) => {
     russell: "^RUT"
   };
 
-  const symbol = SYMBOLS[index] || SYMBOLS['spx'];
-  const cacheKey = `market-${symbol}`;
-
-  // 🔁 Retorna do cache se disponível
-  if (cache.has(cacheKey)) {
-    console.log("🔁 Cache HIT:", symbol);
-    return res.status(200).json(cache.get(cacheKey));
+  const symbol = SYMBOLS[index];
+  if (!symbol) {
+    return res.status(400).json({ error: 'Index inválido.' });
   }
 
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1d&interval=5m`;
+  const now = Date.now();
+  if (cache[index] && now - cache[index].timestamp < CACHE_TTL) {
+    return res.status(200).json(cache[index].data);
+  }
+
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=30d&interval=1d`;
 
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`Yahoo API error: ${response.status}`);
+
     const json = await response.json();
     const result = json.chart?.result?.[0];
 
-    if (!result || !result.timestamp || !result.indicators?.quote?.[0]?.close) {
-      throw new Error("Dados incompletos ou inválidos.");
-    }
+    if (!result) throw new Error('Formato inválido da resposta');
 
     const timestamps = result.timestamp;
     const values = result.indicators.quote[0].close;
@@ -49,20 +51,17 @@ module.exports = async (req, res) => {
 
     const labels = filtered.map(item => {
       const date = new Date(item.ts * 1000);
-      return date.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
     });
 
     const cleanedValues = filtered.map(item => item.v);
 
-    const responseData = { labels, values: cleanedValues };
+    const data = { labels, values: cleanedValues };
+    cache[index] = { data, timestamp: now };
 
-    // 💾 Salva no cache
-    cache.set(cacheKey, responseData);
-
-    console.log("✅ Cache SET:", symbol);
-    res.status(200).json(responseData);
+    res.status(200).json(data);
   } catch (err) {
-    console.error("❌ Erro ao buscar dados:", err);
-    res.status(500).json({ error: 'Erro ao buscar dados do mercado.' });
+    console.error("Erro API:", err);
+    res.status(500).json({ error: 'Erro ao buscar dados de mercado.' });
   }
 };
