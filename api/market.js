@@ -4,6 +4,7 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store"); // 🚫 Impede cache de resposta
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -23,7 +24,7 @@ module.exports = async (req, res) => {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=30d&interval=1d`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { headers: { 'Cache-Control': 'no-cache' } }); // <-- Refresca upstream também
 
     if (!response.ok) {
       throw new Error(`Yahoo API error: ${response.status}`);
@@ -39,7 +40,6 @@ module.exports = async (req, res) => {
     const timestamps = result.timestamp;
     const values = result.indicators.quote[0].close;
 
-    // 🔍 Filtra e alinha valores válidos com datas
     const filtered = timestamps.map((ts, i) => {
       const v = values[i];
       return v != null && !isNaN(v) ? { ts, v } : null;
